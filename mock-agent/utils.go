@@ -30,12 +30,42 @@ func getHardwareIDDarwin() string {
 	return ""
 }
 
+func getHardwareIDLinux() string {
+	// Try multiple methods to get a unique hardware ID on Linux
+
+	// Method 1: Try reading from /etc/machine-id (systemd)
+	machineIDPath := "/etc/machine-id"
+	if out, err := exec.Command("cat", machineIDPath).Output(); err == nil {
+		return strings.TrimSpace(string(out))
+	}
+
+	// Method 2: Try reading from /var/lib/dbus/machine-id (older systems)
+	dbusMachineIDPath := "/var/lib/dbus/machine-id"
+	if out, err := exec.Command("cat", dbusMachineIDPath).Output(); err == nil {
+		return strings.TrimSpace(string(out))
+	}
+
+	// Method 3: Use hwinfo command to get hardware UUID
+	if out, err := exec.Command("hwinfo", "--uuid").Output(); err == nil {
+		return strings.TrimSpace(string(out))
+	}
+
+	// Method 4: Fallback to hostname + system UUID (if available)
+	if out, err := exec.Command("hostid").Output(); err == nil {
+		return strings.TrimSpace(string(out))
+	}
+
+	return ""
+}
+
 func getMachineID() string {
 	osName := runtime.GOOS
 
 	switch osName {
 	case "darwin":
 		return getHardwareIDDarwin()
+	case "linux":
+		return getHardwareIDLinux()
 	default:
 		return ""
 	}
@@ -43,9 +73,9 @@ func getMachineID() string {
 
 func createMessage(msgType, content string) ([]byte, error) {
 	messageToSend := Message{
-		Type:    msgType,
-		AgentId: generateDeviceID(),
-		Content: content,
+		Type:     msgType,
+		DeviceId: generateDeviceID(),
+		Content:  content,
 	}
 	return json.Marshal(messageToSend)
 }

@@ -11,6 +11,7 @@ import {
     OutputMessage,
     MessageType,
     MessageTypes,
+    AgentStatus,
 } from './types';
 
 const adapter = new PrismaBetterSqlite3({
@@ -176,13 +177,21 @@ const wss = new WebSocketServer({ port: PORT });
 console.log(`🧩 Node middleware running on ws://localhost:${PORT}`);
 
 wss.on('connection', async (socket) => {
-    socket.on('message', (data) => {
+    socket.on('message', async (data) => {
         const message = JSON.parse(data.toString()) as MessageType;
 
         switch (message.type) {
             case MessageTypes.CREATE_CONNECTION:
-                console.log('Received CREATE_CONNECTION message:', message);
-
+                await prisma.agent.upsert({
+                    where: { deviceId: message.deviceId },
+                    update: {
+                        status: AgentStatus.ONLINE,
+                        lastSeen: new Date(),
+                    },
+                    create: {
+                        deviceId: message.deviceId,
+                    },
+                });
                 break;
 
             default:

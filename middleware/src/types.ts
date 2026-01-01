@@ -49,8 +49,15 @@ export enum MessageTypes {
 }
 export interface CreateConnection {
     type: MessageTypes.CREATE_CONNECTION;
-    agent_id: string;
+    deviceId: string;
     content: string;
 }
 
 export type MessageType = CreateConnection;
+
+export enum AgentStatus {
+    OFFLINE = 0,
+    SLEEP = 1,
+    SHUTDOWN = 2,
+    ONLINE = 3,
+}
