@@ -1,0 +1,172 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://rebecca:123456789@localhost:5432/unity_link?schema=public"
+}
+
+model Device {
+  // ──────────────────────────────────────────────────────────────
+  // Identification
+  // ──────────────────────────────────────────────────────────────
+  id           String  @id @default(uuid())
+  naturalId    String  @unique // e.g. rebecca@MacBook-Pro-Rebecca
+  serialNumber String?
+  macAddress   String?
+
+  // ──────────────────────────────────────────────────────────────
+  // System Information
+  // ──────────────────────────────────────────────────────────────
+  platform      String?
+  osVersion     String?
+  osBuild       String?
+  architecture  String?
+  model         String?
+  manufacturer  String?
+  deviceType    String?
+  biosVersion   String?
+  kernelVersion String?
+  timezone      String?
+  locale        String?
+
+  // ──────────────────────────────────────────────────────────────
+  // Hardware Specifications (static)
+  // ──────────────────────────────────────────────────────────────
+  cpuModel         String?
+  cpuCores         Int?
+  cpuThreads       Int?
+  cpuFrequency     Int? // MHz
+  memoryTotal      BigInt? // bytes
+  diskTotal        BigInt? // bytes
+  diskType         DiskType?
+  gpuModel         String?
+  gpuMemory        BigInt? // bytes
+  screenResolution String?
+  hasCamera        Boolean?
+  hasMicrophone    Boolean?
+  hasBluetooth     Boolean?
+  hasWifi          Boolean?
+
+  // ──────────────────────────────────────────────────────────────
+  // User Information
+  // ──────────────────────────────────────────────────────────────
+  username      String?
+  user          String?
+  userFullName  String?
+  userEmail     String?
+  isAdmin       Boolean?
+  loggedInUsers Int?
+
+  // ──────────────────────────────────────────────────────────────
+  // Agent Information
+  // ──────────────────────────────────────────────────────────────
+  agentVersion   String?
+  agentAutoStart Boolean?
+  agentStatus    AgentStatus?
+
+  // ──────────────────────────────────────────────────────────────
+  // Security & Compliance
+  // ──────────────────────────────────────────────────────────────
+  antivirusInstalled Boolean?
+  antivirusName      String?
+  antivirusUpToDate  Boolean?
+  diskEncrypted      Boolean?
+  screenLockEnabled  Boolean?
+  firewallEnabled    Boolean?
+  lastSecurityUpdate DateTime?
+
+  // ──────────────────────────────────────────────────────────────
+  // Network Information (real-time)
+  // ──────────────────────────────────────────────────────────────
+  hostname           String?
+  publicIp           String?
+  localIp            String?
+  networkSpeed       Float? // Mbps
+  wifiSsid           String?
+  wifiSignalStrength Float? // percentage
+  ethernetConnected  Boolean?
+  networkBytesIn     BigInt?
+  networkBytesOut    BigInt?
+
+  // ──────────────────────────────────────────────────────────────
+  // Hardware Usage (real-time)
+  // ──────────────────────────────────────────────────────────────
+  cpuUsage       Float? // 0–100 (%)
+  memoryUsage    BigInt? // bytes
+  diskUsage      BigInt? // bytes
+  batteryLevel   Float? // 0-100 (%)
+  batteryStatus  BatteryStatus?
+  temperatureCpu Float? // Celsius
+  temperatureGpu Float? // Celsius
+
+  // ──────────────────────────────────────────────────────────────
+  // Connection Status (real-time)
+  // ──────────────────────────────────────────────────────────────
+  isOnline          Boolean            @default(false)
+  status            DeviceStatus       @default(offline)
+  lastSeen          DateTime
+  uptime            BigInt? // milliseconds
+  bootTime          DateTime?
+  lastReboot        DateTime?
+  connectionQuality ConnectionQuality?
+
+  // ──────────────────────────────────────────────────────────────
+  // Performance Metrics (real-time)
+  // ──────────────────────────────────────────────────────────────
+  avgCpuUsage24h    Float?
+  avgMemoryUsage24h Float?
+  processCount      Int?
+
+  // ──────────────────────────────────────────────────────────────
+  // Additional Info
+  // ──────────────────────────────────────────────────────────────
+  notes      String?
+  tags       String[] // Array of strings
+  location   String?
+  department String?
+
+  // ──────────────────────────────────────────────────────────────
+  // Timestamps
+  // ──────────────────────────────────────────────────────────────
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("devices")
+}
+
+enum DeviceStatus {
+  offline
+  online
+  lost_connection
+}
+
+enum DiskType {
+  ssd
+  hdd
+  nvme
+}
+
+enum BatteryStatus {
+  charging
+  discharging
+  full
+}
+
+enum ConnectionQuality {
+  excellent
+  good
+  fair
+  poor
+}
+
+enum AgentStatus {
+  running
+  stopped
+  error
+}

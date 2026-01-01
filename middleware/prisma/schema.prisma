@@ -1,0 +1,19 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider   = "prisma-client"
+  output     = "./generated"
+}
+
+datasource db {
+  provider  = "sqlite"
+}
+
+model Agent {
+  id         Int      @id @default(autoincrement())
+  deviceId   String   @unique
+  status     Int      @default(0) // 0=offline, 1=sleep, 2=shutdown, 3=online
+  lastSeen   DateTime @updatedAt
+  createdAt  DateTime @default(now())
+}

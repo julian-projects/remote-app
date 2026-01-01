@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  backend:
+    build: ./apps/backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    restart: unless-stopped
+
+  frontend:
+    build: ./apps/frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./apps/frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_BACKEND_URL=http://localhost:3000  # Use host machine URL
+    depends_on:
+      - backend
+
+  agent:
+    build: ./apps/agent
+    restart: unless-stopped
+    # No ports – just logs

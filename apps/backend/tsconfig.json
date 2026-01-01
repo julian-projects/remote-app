@@ -1,0 +1,12 @@
+{
+    "extends": "../../tsconfig.base.json",
+    "compilerOptions": {
+        "composite": true,
+        "outDir": "dist",
+        "rootDir": "src",
+        "module": "commonjs",
+        "tsBuildInfoFile": "dist/.tsbuildinfo"
+    },
+    "references": [{ "path": "../../packages/shared-types" }],
+    "include": ["src"]
+}
