@@ -74,9 +74,11 @@ func getMachineID() string {
 }
 
 func createMessage(msgType, content string) ([]byte, error) {
+	deviceID := generateDeviceID()
+	DevLogf("Creating message with deviceId: %s", deviceID)
 	messageToSend := Message{
 		Type:     msgType,
-		DeviceId: generateDeviceID(),
+		DeviceId: deviceID,
 		Content:  content,
 	}
 	return json.Marshal(messageToSend)
@@ -95,6 +97,9 @@ func executeCommand(command string) string {
 	cmd.Dir = currentWorkingDir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
+		DevLogf("Command execution error: %v", err)
+		DevLogf("Working directory: %s", currentWorkingDir)
+		DevLogf("Command: %s", command)
 		return "Error executing command: " + err.Error()
 	}
 

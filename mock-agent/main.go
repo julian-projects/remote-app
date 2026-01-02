@@ -16,6 +16,10 @@ func main() {
 	backoffCounter := 0
 	maxBackoff := 30 * time.Second
 
+	// Log the device ID at startup
+	deviceID := generateDeviceID()
+	DevLogf("Agent Device ID: %s", deviceID)
+
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	dialer := websocket.Dialer{
@@ -86,9 +90,6 @@ func main() {
 
 // handleConnection manages the message reading loop
 func handleConnection(conn *websocket.Conn) error {
-	// Set read deadline to detect stale connections
-	conn.SetReadDeadline(time.Now().Add(5 * time.Minute))
-
 	for {
 		_, msgBytes, err := conn.ReadMessage()
 		if err != nil {
@@ -97,9 +98,6 @@ func handleConnection(conn *websocket.Conn) error {
 			}
 			return err
 		}
-
-		// Reset read deadline on successful message
-		conn.SetReadDeadline(time.Now().Add(5 * time.Minute))
 
 		var incoming Message
 		if err := json.Unmarshal(msgBytes, &incoming); err != nil {
