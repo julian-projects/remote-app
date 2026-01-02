@@ -33,10 +33,7 @@ func main() {
 			if backoffCounter > 10 {
 				backoffCounter = 10
 			}
-			backoffDuration := time.Duration(1<<uint(backoffCounter)) * time.Second
-			if backoffDuration > maxBackoff {
-				backoffDuration = maxBackoff
-			}
+			backoffDuration := min(time.Duration(1<<uint(backoffCounter))*time.Second, maxBackoff)
 			// Add jitter: ±20% randomness
 			jitter := time.Duration(rng.Int63n(int64(backoffDuration / 5)))
 			backoffDuration = backoffDuration + jitter - backoffDuration/10
@@ -114,11 +111,6 @@ func processMessage(conn *websocket.Conn, msg Message) {
 		if err := sendMessage(conn, "GET_COMMAND_OUTPUT", output); err != nil {
 			log.Println("Failed to send command output:", err)
 		}
-	case "SEND_SCREENSHOTS":
-		log.Println("Starting screenshot streaming...")
-
-	case "STOP_SCREENSHOTS":
-		log.Println("Stopping screenshot streaming...")
 
 	default:
 		log.Println("Unknown message type:", msg.Type)

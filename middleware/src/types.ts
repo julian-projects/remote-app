@@ -48,9 +48,6 @@ export enum MessageTypes {
     CREATE_CONNECTION = 'CREATE_CONNECTION',
     EXECUTE_COMMAND = 'EXECUTE_COMMAND',
     GET_COMMAND_OUTPUT = 'GET_COMMAND_OUTPUT',
-    SEND_SCREENSHOTS = 'SEND_SCREENSHOTS',
-    GET_SCREENSHOTS = 'GET_SCREENSHOTS',
-    STOP_SCREENSHOTS = 'STOP_SCREENSHOTS',
 }
 export interface CreateConnection {
     type: MessageTypes.CREATE_CONNECTION;
@@ -69,31 +66,7 @@ export interface GetCommandOutput {
     content: string;
 }
 
-export interface SendScreenshots {
-    type: MessageTypes.SEND_SCREENSHOTS;
-    deviceId: string;
-    content: string;
-}
-
-export interface GetScreenshots {
-    type: MessageTypes.GET_SCREENSHOTS;
-    deviceId: string;
-    content: string;
-}
-
-export interface StopScreenshots {
-    type: MessageTypes.STOP_SCREENSHOTS;
-    deviceId: string;
-    content: string;
-}
-
-export type MessageType =
-    | CreateConnection
-    | ExecuteCommand
-    | GetCommandOutput
-    | SendScreenshots
-    | StopScreenshots
-    | GetScreenshots;
+export type MessageType = CreateConnection | ExecuteCommand | GetCommandOutput;
 
 export enum AgentStatus {
     OFFLINE = 0,
