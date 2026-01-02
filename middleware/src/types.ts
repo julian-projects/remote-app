@@ -46,11 +46,31 @@ export type Message =
 
 export enum MessageTypes {
     CREATE_CONNECTION = 'CREATE_CONNECTION',
+    EXECUTE_COMMAND = 'EXECUTE_COMMAND',
+    GET_COMMAND_OUTPUT = 'GET_COMMAND_OUTPUT',
 }
 export interface CreateConnection {
     type: MessageTypes.CREATE_CONNECTION;
-    agent_id: string;
+    deviceId: string;
+    content: string;
+}
+export interface ExecuteCommand {
+    type: MessageTypes.EXECUTE_COMMAND;
+    deviceId: string;
     content: string;
 }
 
-export type MessageType = CreateConnection;
+export interface GetCommandOutput {
+    type: MessageTypes.GET_COMMAND_OUTPUT;
+    deviceId: string;
+    content: string;
+}
+
+export type MessageType = CreateConnection | ExecuteCommand | GetCommandOutput;
+
+export enum AgentStatus {
+    OFFLINE = 0,
+    SLEEP = 1,
+    SHUTDOWN = 2,
+    ONLINE = 3,
+}
