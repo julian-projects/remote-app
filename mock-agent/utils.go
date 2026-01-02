@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -86,4 +88,39 @@ func sendMessage(conn *websocket.Conn, msgType, content string) error {
 		return err
 	}
 	return conn.WriteMessage(websocket.TextMessage, msg)
+}
+
+func executeCommand(command string) string {
+	cmd := exec.Command("sh", "-c", command)
+	cmd.Dir = currentWorkingDir
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "Error executing command: " + err.Error()
+	}
+
+	output := strings.TrimSpace(string(out))
+
+	// Check if the command was a cd command
+	if strings.HasPrefix(strings.TrimSpace(command), "cd ") {
+		// Extract the path from the cd command
+		parts := strings.Fields(command)
+		if len(parts) >= 2 {
+			newPath := strings.Join(parts[1:], " ")
+			// Resolve the path relative to current directory
+			if !strings.HasPrefix(newPath, "/") {
+				newPath = filepath.Join(currentWorkingDir, newPath)
+			}
+			// Clean up the path
+			newPath = filepath.Clean(newPath)
+			// Check if directory exists
+			if info, err := os.Stat(newPath); err == nil && info.IsDir() {
+				currentWorkingDir = newPath
+				return "Changed directory to: " + newPath
+			} else {
+				return "Error: directory not found"
+			}
+		}
+	}
+
+	return output
 }
