@@ -13,55 +13,74 @@ import (
 var currentWorkingDir string
 
 func main() {
-	var u = url.URL{Scheme: "ws", Host: IP_ADDRESSES[0], Path: "/"}
 	backoffCounter := 0
 	maxBackoff := 30 * time.Second
 
-	// Create a local random generator instead of using global rand.Seed
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 
-	for {
-		DevLog("Connecting to:", u.String())
+	dialer := websocket.Dialer{
+		HandshakeTimeout: 5 * time.Second,
+	}
 
-		conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
-		if err != nil {
-			DevLog("dial failed:", err)
-			// Exponential backoff with jitter
+	for {
+		connected := false
+
+		for _, ip := range IP_ADDRESSES {
+			u := url.URL{
+				Scheme: "ws",
+				Host:   ip,
+				Path:   "/",
+			}
+
+			DevLog("Connecting to:", u.String())
+
+			conn, _, err := dialer.Dial(u.String(), nil)
+			if err != nil {
+				DevLog("dial failed:", err)
+				continue
+			}
+
+			// ✅ Connected
+			connected = true
+			backoffCounter = 0
+			DevLog("Connected to:", u.String())
+
+			dir, _ := os.Getwd()
+			currentWorkingDir = dir
+
+			if err := sendMessage(conn, "CREATE_CONNECTION", dir); err != nil {
+				DevLog("Failed to send initial message:", err)
+				conn.Close()
+				break
+			}
+
+			if err := handleConnection(conn); err != nil {
+				DevLog("Connection error:", err)
+			}
+
+			conn.Close()
+			time.Sleep(1 * time.Second)
+			break
+		}
+
+		// 🔁 Only happens if ALL IPs failed
+		if !connected {
 			backoffCounter++
 			if backoffCounter > 10 {
 				backoffCounter = 10
 			}
-			backoffDuration := min(time.Duration(1<<uint(backoffCounter))*time.Second, maxBackoff)
-			// Add jitter: ±20% randomness
-			jitter := time.Duration(rng.Int63n(int64(backoffDuration / 5)))
-			backoffDuration = backoffDuration + jitter - backoffDuration/10
 
-			DevLogf("Retrying in %v...\n", backoffDuration)
-			time.Sleep(backoffDuration)
-			continue
+			backoff := min(
+				time.Duration(1<<uint(backoffCounter))*time.Second,
+				maxBackoff,
+			)
+
+			jitter := time.Duration(rng.Int63n(int64(backoff / 5)))
+			backoff = backoff + jitter - backoff/10
+
+			DevLogf("All IPs failed. Retrying in %v...\n", backoff)
+			time.Sleep(backoff)
 		}
-
-		// Reset backoff on successful connection
-		backoffCounter = 0
-
-		DevLog("Connected!")
-
-		// Send initial message
-		dir, _ := os.Getwd()
-		currentWorkingDir = dir
-		if err := sendMessage(conn, "CREATE_CONNECTION", dir); err != nil {
-			DevLog("Failed to send initial message:", err)
-			conn.Close()
-			continue // don't sleep here, let exponential backoff handle it
-		}
-
-		// Read until disconnected
-		if err := handleConnection(conn); err != nil {
-			DevLog("Connection error:", err)
-		}
-
-		conn.Close()
-		time.Sleep(1 * time.Second) // brief pause before reconnect attempt
 	}
 }
 
