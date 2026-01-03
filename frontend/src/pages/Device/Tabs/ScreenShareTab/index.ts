@@ -1,0 +1,1 @@
+export { ScreenShareTab } from "./ScreenShareTab";

@@ -3,6 +3,8 @@ import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import { PrismaClient } from '../prisma/generated/client';
 import WebSocket, { WebSocketServer } from 'ws';
 import { MessageType, MessageTypes, AgentStatus } from './types';
+import express from 'express';
+import cors from 'cors';
 
 const adapter = new PrismaBetterSqlite3({
     url: process.env.DATABASE_URL!,
@@ -54,6 +56,8 @@ agentServer.on('connection', async (socket) => {
                         lastSeen: new Date(),
                     },
                     create: {
+                        status: AgentStatus.ONLINE,
+
                         deviceId: message.deviceId,
                     },
                 });
@@ -191,4 +195,56 @@ browserServer.on('connection', async (socket) => {
     });
 
     console.log('🔌 Browser connected');
+});
+
+// 🌐 HTTP SERVER (port 8080) - REST API for browser
+const HTTP_PORT = 8080;
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+// GET /api/devices - Get list of all agents with their status
+app.get('/api/devices', async (req, res) => {
+    try {
+        const agents = await prisma.agent.findMany({
+            select: {
+                deviceId: true,
+                status: true,
+                lastSeen: true,
+            },
+        });
+
+        res.json(agents);
+    } catch (error) {
+        console.error('Error fetching devices:', error);
+        res.status(500).json({ error: 'Failed to fetch devices' });
+    }
+});
+
+// GET /api/devices/:deviceId - Get a specific agent's details
+app.get('/api/devices/:deviceId', async (req, res) => {
+    try {
+        const agent = await prisma.agent.findUnique({
+            where: { deviceId: req.params.deviceId },
+            select: {
+                deviceId: true,
+                status: true,
+                lastSeen: true,
+            },
+        });
+
+        if (!agent) {
+            return res.status(404).json({ error: 'Agent not found' });
+        }
+
+        res.json(agent);
+    } catch (error) {
+        console.error('Error fetching device:', error);
+        res.status(500).json({ error: 'Failed to fetch device' });
+    }
+});
+
+app.listen(HTTP_PORT, () => {
+    console.log(`🌐 HTTP API running on http://localhost:${HTTP_PORT}`);
 });
